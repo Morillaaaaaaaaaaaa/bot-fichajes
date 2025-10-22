@@ -4,34 +4,23 @@ from discord.ui import View, Button
 import json
 import os
 import datetime
+from flask import Flask
+import threading
 
-# Lista de canales de los trabajadores
+# ======== CONFIGURACIÓN DEL BOT ========
 CANALES_TRABAJADORES = [
-    1428906272542953573,
-    1428906286971617402,
-    1428906299030114345,
-    1428906312061943898,
-    1428906327220031691,
-    1428906337391345794,
-    1428906361944674314,
-    1428906373143461899,
-    1428906380454006970,
-    1428906391816503336,
-    1428906401983369236,
-    1428906429376630935,
-    1428906445390352536,
-    1428906455473459343,
-    1428906470875074622,
+    1428906272542953573, 1428906286971617402, 1428906299030114345,
+    1428906312061943898, 1428906327220031691, 1428906337391345794,
+    1428906361944674314, 1428906373143461899, 1428906380454006970,
+    1428906391816503336, 1428906401983369236, 1428906429376630935,
+    1428906445390352536, 1428906455473459343, 1428906470875074622,
     1428906485794082877
 ]
 
-# Canal donde se mostrará el ranking
 CANAL_RANKING_ID = 1428919005032353792
-
-# Archivo JSON donde se guardan las horas
 ARCHIVO_HORAS = "horas_trabajadores.json"
 
-# Cargar archivo o crear uno nuevo
+# Cargar archivo JSON o crear uno nuevo
 if os.path.exists(ARCHIVO_HORAS):
     with open(ARCHIVO_HORAS, "r") as f:
         horas_trabajadores = json.load(f)
@@ -62,7 +51,7 @@ async def on_ready():
                 print(f"⚠️ No puedo acceder al canal {canal_id}")
                 continue
 
-            # Intentar borrar mensajes previos, pero no romper si falla
+            # Intentar borrar mensajes previos
             try:
                 async for msg in canal.history(limit=10):
                     if msg.author == bot.user:
@@ -113,7 +102,7 @@ async def on_interaction(interaction: discord.Interaction):
             await interaction.response.send_message("⚠️ No habías fichado entrada.", ephemeral=True)
             return
         inicio = datetime.datetime.fromisoformat(datos["ingreso"])
-        minutos = (ahora - inicio).total_seconds() / 60  # Simulación: 1 minuto = 1 hora
+        minutos = (ahora - inicio).total_seconds() / 60
         datos["total_minutos"] += minutos
         datos["ingreso"] = None
         await interaction.response.send_message(
@@ -125,7 +114,6 @@ async def on_interaction(interaction: discord.Interaction):
         total = datos["total_minutos"]
         await interaction.response.send_message(f"🕒 Horas totales: {total:.2f}", ephemeral=True)
 
-    # Guardar los cambios
     with open(ARCHIVO_HORAS, "w") as f:
         json.dump(horas_trabajadores, f, indent=4)
 
@@ -161,5 +149,17 @@ async def actualizar_ranking(guild):
         print(f"⚠️ Otro error al enviar ranking: {e}")
 
 # ======== EJECUTAR EL BOT ========
-import os
 bot.run(os.getenv("DISCORD_TOKEN"))
+
+# ======== MINI SERVIDOR WEB PARA RENDER ========
+app = Flask('')
+
+@app.route('/')
+def home():
+    return "Bot activo y en funcionamiento."
+
+def run_web():
+    app.run(host='0.0.0.0', port=8080)
+
+t = threading.Thread(target=run_web)
+t.start()
