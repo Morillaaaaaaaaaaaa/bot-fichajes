@@ -58,19 +58,33 @@ async def on_ready():
     for guild in bot.guilds:
         for canal_id in CANALES_TRABAJADORES:
             canal = guild.get_channel(canal_id)
-            if canal:
+            if not canal:
+                print(f"⚠️ No puedo acceder al canal {canal_id}")
+                continue
+
+            # Intentar borrar mensajes previos, pero no romper si falla
+            try:
                 async for msg in canal.history(limit=10):
                     if msg.author == bot.user:
                         await msg.delete()
+            except discord.errors.Forbidden:
+                print(f"⚠️ Sin permisos para borrar mensajes en {canal.name}")
+            except Exception as e:
+                print(f"⚠️ Otro error al borrar mensajes en {canal.name}: {e}")
 
-                view = FichajeView()
-                embed = discord.Embed(
-                    title="💼 Ministerio de Trabajo",
-                    description="Sistema de fichaje del taller\nSelecciona una opción:",
-                    color=0x3498db
-                )
+            view = FichajeView()
+            embed = discord.Embed(
+                title="💼 Ministerio de Trabajo",
+                description="Sistema de fichaje del taller\nSelecciona una opción:",
+                color=0x3498db
+            )
+            try:
                 await canal.send(embed=embed, view=view)
                 print(f"📋 Panel enviado en #{canal.name}")
+            except discord.errors.Forbidden:
+                print(f"⚠️ Sin permisos para enviar mensajes en {canal.name}")
+            except Exception as e:
+                print(f"⚠️ Otro error al enviar mensajes en {canal.name}: {e}")
 
 # ======== MANEJO DE INTERACCIONES ========
 @bot.event
@@ -130,11 +144,22 @@ async def actualizar_ranking(guild):
         nombre = canal_trab.name if canal_trab else f"Canal {canal_id}"
         texto += f"**{i}. {nombre}** — {datos['total_minutos']:.2f} horas\n"
 
-    async for msg in canal.history(limit=5):
-        if msg.author == bot.user:
-            await msg.delete()
+    try:
+        async for msg in canal.history(limit=5):
+            if msg.author == bot.user:
+                await msg.delete()
+    except discord.errors.Forbidden:
+        print(f"⚠️ Sin permisos para borrar mensajes en ranking")
+    except Exception as e:
+        print(f"⚠️ Otro error al borrar mensajes en ranking: {e}")
 
-    await canal.send(texto)
+    try:
+        await canal.send(texto)
+    except discord.errors.Forbidden:
+        print(f"⚠️ Sin permisos para enviar ranking")
+    except Exception as e:
+        print(f"⚠️ Otro error al enviar ranking: {e}")
 
 # ======== EJECUTAR EL BOT ========
+import os
 bot.run(os.getenv("DISCORD_TOKEN"))
