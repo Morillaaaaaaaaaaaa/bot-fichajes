@@ -165,5 +165,3 @@ t.start()
 
 # ======== EJECUTAR EL BOT ========
 bot.run(os.getenv("DISCORD_TOKEN"))
-
-
