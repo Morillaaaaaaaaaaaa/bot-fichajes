@@ -114,6 +114,7 @@ async def on_interaction(interaction: discord.Interaction):
         total = datos["total_minutos"]
         await interaction.response.send_message(f"🕒 Horas totales: {total:.2f}", ephemeral=True)
 
+    # Guardar los cambios
     with open(ARCHIVO_HORAS, "w") as f:
         json.dump(horas_trabajadores, f, indent=4)
 
@@ -148,9 +149,6 @@ async def actualizar_ranking(guild):
     except Exception as e:
         print(f"⚠️ Otro error al enviar ranking: {e}")
 
-# ======== EJECUTAR EL BOT ========
-bot.run(os.getenv("DISCORD_TOKEN"))
-
 # ======== MINI SERVIDOR WEB PARA RENDER ========
 app = Flask('')
 
@@ -161,5 +159,11 @@ def home():
 def run_web():
     app.run(host='0.0.0.0', port=8080)
 
+# Arrancar Flask en un hilo separado
 t = threading.Thread(target=run_web)
 t.start()
+
+# ======== EJECUTAR EL BOT ========
+bot.run(os.getenv("DISCORD_TOKEN"))
+
+
